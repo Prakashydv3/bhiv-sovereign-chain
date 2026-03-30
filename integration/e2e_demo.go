@@ -50,14 +50,31 @@ func main() {
 	tracer.LogHashGenerated(env, envelopeHash)
 	fmt.Printf("  envelope_hash   : %x\n", envelopeHash)
 
-	// --- Step 3: Signing ---
-	fmt.Println("\n[3] Agent signing")
-	signature, err := agentSigner.SignHash(envelopeHash)
+	// --- Step 3: Agent + Enforcement Signing ---
+	fmt.Println("\n[3] Agent + enforcement signing")
+	enforcementSigner, _ := hashing.NewSigner("enforcement-001")
+
+	agentSigned, err := agentSigner.CreateSignedHash(envelopeHash[:])
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("  signer_id       : %s\n", agentSigner.SignerID())
-	fmt.Printf("  signature       : %x\n", signature[:16])
+	enforcementSigned, err := enforcementSigner.CreateSignedHash(envelopeHash[:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Verify both signatures
+	if err := agentSigned.Verify(); err != nil {
+		log.Fatalf("agent signature invalid: %v", err)
+	}
+	if err := enforcementSigned.Verify(); err != nil {
+		log.Fatalf("enforcement signature invalid: %v", err)
+	}
+
+	fmt.Printf("  agent_signer        : %s\n", agentSigned.SignerID)
+	fmt.Printf("  agent_sig_verified  : true\n")
+	fmt.Printf("  enforcement_signer  : %s\n", enforcementSigned.SignerID)
+	fmt.Printf("  enforcement_verified: true\n")
 
 	// --- Step 4: L1 Anchor ---
 	fmt.Println("\n[4] L1 anchoring")
