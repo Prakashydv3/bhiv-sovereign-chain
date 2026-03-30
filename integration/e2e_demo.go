@@ -30,7 +30,7 @@ func main() {
 		Speed:    1.0,
 	}
 
-	tracer.LogInput("pending", request.IntentID, ttsProcessor.SystemID)
+	tracer.LogInput(request.IntentID, ttsProcessor.SystemID, request)
 
 	env, ttsResponse, err := ttsProcessor.Execute(request)
 	if err != nil {

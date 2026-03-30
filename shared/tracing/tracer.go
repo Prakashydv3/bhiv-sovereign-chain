@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -37,15 +38,18 @@ func NewTracer(logDir string) *Tracer {
 }
 
 // LogInput logs the raw input capture — the execution tap entry point.
-func (t *Tracer) LogInput(executionID, intentID, systemID string) error {
+// inputData is the raw request serialized as a string for traceability.
+func (t *Tracer) LogInput(intentID, systemID string, inputData interface{}) error {
+	inputBytes, _ := json.Marshal(inputData)
 	return t.write(ExecutionLog{
 		Timestamp:       time.Now().Unix(),
-		ExecutionID:     executionID,
+		ExecutionID:     "pre-execution",
 		IntentID:        intentID,
 		SystemID:        systemID,
 		Stage:           "input",
 		ExecutionStatus: "pending",
 		AnchorStatus:    "none",
+		Hash:            fmt.Sprintf("%x", sha256.Sum256(inputBytes)),
 		Success:         true,
 	})
 }
