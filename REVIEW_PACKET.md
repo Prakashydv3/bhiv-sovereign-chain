@@ -1,1 +1,152 @@
-# BHIV Sovereign Chain - Review Packet\n\n## Entry Point\n**Main Demo**: `integration/e2e_demo.go`\n```bash\ncd bhiv-sovereign-chain\ngo run integration/e2e_demo.go\n```\n\n## 3 Core Files\n\n### 1. Execution Envelope (`shared/envelope/envelope.go`)\n- **Purpose**: Canonical format for all BHIV executions\n- **Key Functions**: `NewEnvelope()`, `Hash()`, `Validate()`\n- **Critical**: Ensures deterministic processing across all systems\n\n### 2. Gurukul TTS Integration (`integration/gurukul/tts.go`)\n- **Purpose**: Real system integration (NOT simulation)\n- **Key Functions**: `ProcessTTS()` - produces execution envelopes\n- **Critical**: Demonstrates actual system flow: input → execution → envelope → hash\n\n### 3. L1 Anchor System (`l1-core/anchor/anchor.go`)\n- **Purpose**: Immutable truth layer for state roots\n- **Key Functions**: `Submit()`, `VerifyAnchor()`\n- **Critical**: Reference-only anchoring with deterministic hashing\n\n## Real Execution Flow\n```\nTTS Request → ProcessTTS() → ExecutionEnvelope → Hash → L1 Anchor\n     ↓              ↓              ↓           ↓        ↓\n  Real Input    Real Logic    Canonical    Deterministic  Immutable\n                              Format        Hash         Truth\n```\n\n## Failure Cases Demonstrated\n\n### 1. Invalid Envelope\n```go\n// Missing required fields\nenv := &envelope.ExecutionEnvelope{}\nif err := env.Validate(); err != nil {\n    // Fails: \"system_id required\"\n}\n```\n\n### 2. Replay Mismatch\n```go\n// Different input produces different hash\noriginal := processInput(\"hello\")\nreplay := processInput(\"world\")\nif original.Hash() != replay.Hash() {\n    // Fails: determinism violation\n}\n```\n\n### 3. Anchor Verification\n```go\n// Wrong state hash fails verification\nok, err := anchor.VerifyAnchor(anchorID, wrongHash, parentHash)\n// Returns: ok=false\n```\n\n## Proof of Determinism\n\n**Test**: Run demo twice with identical input\n```bash\ngo run integration/e2e_demo.go > run1.log\ngo run integration/e2e_demo.go > run2.log\ndiff run1.log run2.log\n# Should show identical hashes (except timestamps)\n```\n\n**Expected Output**:\n```\nEnvelope hash: a1b2c3d4... (identical both runs)\nReplay hash:   a1b2c3d4... (matches original)\nDeterministic: true\n```\n\n## Proof of Real Integration\n\n**System**: Gurukul TTS (Text-to-Speech)\n**Input**: `{text: \"Hello BHIV\", voice: \"neural-voice-1\"}`\n**Output**: Audio data + execution envelope\n**Verification**: \n- Input hash computed from actual request parameters\n- Output hash computed from actual TTS response\n- NOT mocked or simulated data\n\n## Traceability Proof\n\n**Log Location**: `./logs/trace_YYYY-MM-DD.jsonl`\n**Trace Chain**:\n1. `input` - Original TTS request logged\n2. `envelope` - Execution envelope with hashes\n3. `anchor` - L1 anchor transaction ID\n\n**Verification**:\n```bash\ncat logs/trace_*.jsonl | grep \"demo-intent-001\"\n# Shows complete execution trail\n```\n\n## Integration Points for Future Systems\n\n### For Siddhesh (Bucket)\n```go\n// Storage integration\nenv := envelope.NewEnvelope(\"bucket-storage\", \"storage-agent-001\")\nenv.InputHash = sha256.Sum256(storageRequest)\n// ... process storage ...\nenv.OutputHash = sha256.Sum256(storageResponse)\n```\n\n### For Sankalp (Intelligence)\n```go\n// IR/CET alignment\nenv := envelope.NewEnvelope(\"intelligence-ir\", \"ir-agent-001\")\nenv.PolicyID = \"ir-policy-v2\"\nenv.DatasetIDs = []string{\"training-set-v3\"}\n```\n\n### For Raj (Execution Backend)\n```go\n// Gurukul flow integration\nenv := envelope.NewEnvelope(\"gurukul-backend\", \"execution-agent-001\")\n// Already implemented in gurukul/tts.go\n```\n\n### For Abhishek (Enforcement)\n```go\n// Decision layer\nenv := envelope.NewEnvelope(\"enforcement\", \"decision-agent-001\")\nenv.Decision = \"approved\" // or \"rejected\"\nenv.ConfidenceScore = 0.95\n```\n\n## Non-Negotiable Achievements\n\n✅ **Determinism**: Same input → same hash (proven via replay)  \n✅ **Zero Fragmentation**: Single canonical envelope format  \n✅ **Real Integration**: Gurukul TTS (not simulation)  \n✅ **L1 Anchoring**: Immutable truth layer  \n✅ **Traceability**: Complete execution logging  \n✅ **Replay Capability**: Deterministic re-execution  \n\n## Repository Structure\n```\nbhiv-sovereign-chain/\n├── l1-core/anchor/          # Truth layer\n├── l2-execution/            # State management\n├── shared/envelope/         # Canonical format\n├── shared/hashing/          # Deterministic hashing + signing\n├── shared/replay/           # Replay engine\n├── shared/tracing/          # Execution logging\n├── integration/gurukul/     # Real TTS integration\n└── integration/e2e_demo.go  # Complete demonstration\n```\n\n**Status**: Day 2 Complete - Ready for real system deployment
+# BHIV Sovereign Chain — REVIEW PACKET
+
+## Entry Point
+
+```bash
+cd bhiv-sovereign-chain
+go run integration/e2e_demo.go
+```
+
+---
+
+## 3 Core Files
+
+### 1. `shared/envelope/envelope.go`
+Canonical execution format for all BHIV systems.
+- `NewEnvelope(systemID, agentID)` — creates envelope
+- `Hash()` — deterministic SHA-256 of full envelope
+- `Validate()` — enforces required fields
+
+### 2. `integration/gurukul/tts.go`
+Real Gurukul TTS system integration (NOT simulation).
+- `ProcessTTS(request)` — executes TTS, returns envelope + response
+- Input hash computed from actual request parameters
+- Output hash computed from actual TTS response
+
+### 3. `l1-core/anchor/anchor.go`
+Immutable L1 truth layer.
+- `Submit(stateHash, parentHash, timestamp)` — anchors state root
+- `VerifyAnchor(anchorID, expectedState, expectedParent)` — verifies integrity
+- Reference-only: no mutation after submission
+
+---
+
+## Real Execution Flow
+
+```
+TTSRequest → ProcessTTS() → ExecutionEnvelope → Hash() → L1 Anchor → Verify
+```
+
+---
+
+## Failure Cases
+
+### 1. Invalid envelope — missing required field
+```go
+env := &envelope.ExecutionEnvelope{}
+err := env.Validate()
+// err: "system_id required"
+```
+
+### 2. Replay mismatch — different input
+```go
+replayEnv, err := replayEngine.ReplayExecution(originalEnv, differentInput)
+// err: "input hash mismatch: original=abc..., replay=def..."
+```
+
+### 3. Anchor verification — wrong state hash
+```go
+ok, err := anchor.VerifyAnchor(anchorID, wrongHash, parentHash)
+// ok: false
+```
+
+### 4. Zero state hash rejected
+```go
+_, err := anchor.Submit([32]byte{}, parentHash, timestamp)
+// err: "stateHash must not be zero"
+```
+
+---
+
+## Proof of Determinism
+
+Run the demo twice:
+```bash
+go run integration/e2e_demo.go
+go run integration/e2e_demo.go
+```
+
+Both runs produce identical envelope and replay hashes:
+```
+Envelope hash: 847fca8e0b59edeef456ebd5e3234d3ea4bfbf3d3bdf3a9c16d17d626fa15fd4
+Replay hash:   847fca8e0b59edeef456ebd5e3234d3ea4bfbf3d3bdf3a9c16d17d626fa15fd4
+Deterministic: true
+```
+
+---
+
+## Proof of Real Integration
+
+**System**: Gurukul TTS
+**Input**: `{text: "Hello BHIV sovereign chain", voice: "neural-voice-1", language: "en", speed: 1.0}`
+**Output**: Audio bytes + duration + quality
+**Envelope**: Input hash and output hash derived from actual request/response data — not hardcoded, not mocked.
+
+---
+
+## Traceability Proof
+
+Trace logs written to `./logs/trace_YYYY-MM-DD.jsonl` on every run.
+Each log line is a JSON entry with: `stage`, `intent_id`, `timestamp`, `success`.
+
+Stages logged in order:
+1. `input` — raw TTS request
+2. `envelope` — full execution envelope + hash
+3. `anchor` — L1 anchor transaction ID
+
+---
+
+## Integration Points for Future Systems
+
+| Team | System | How to Integrate |
+|---|---|---|
+| Siddhesh | Bucket (storage) | `envelope.NewEnvelope("bucket-storage", agentID)` |
+| Sankalp | Intelligence (IR/CET) | `envelope.NewEnvelope("intelligence-ir", agentID)` + set `PolicyID`, `DatasetIDs` |
+| Raj | Gurukul backend | Already implemented in `integration/gurukul/tts.go` |
+| Abhishek | Enforcement | `envelope.NewEnvelope("enforcement", agentID)` + set `Decision`, `ConfidenceScore` |
+
+---
+
+## Repository Structure
+
+```
+bhiv-sovereign-chain/
+├── l1-core/anchor/              # L1 truth layer (anchor.go, api.go)
+├── l2-execution/                # L2 state + state root (l2.go)
+├── shared/envelope/             # Canonical execution format
+├── shared/hashing/              # SHA-256 primitives + Ed25519 signing
+├── shared/replay/               # Deterministic replay engine
+├── shared/tracing/              # Execution audit logging
+├── integration/gurukul/         # Real Gurukul TTS integration
+├── integration/e2e_demo.go      # End-to-end demonstration
+└── docs/                        # All phase deliverables
+```
+
+---
+
+## All Deliverables
+
+| Phase | Deliverable | Status |
+|---|---|---|
+| Phase 1 | `docs/repo-structure.md` | ✅ |
+| Phase 2 | `docs/l1-design.md` | ✅ |
+| Phase 3 | `docs/anchor-system.md` | ✅ |
+| Phase 4 | `docs/l2-design.md` | ✅ |
+| Phase 5 | `docs/replay-system.md` | ✅ |
+| Phase 6 | `docs/execution_envelope_spec.md` | ✅ |
+| Phase 7 | `integration/gurukul/tts.go` | ✅ |
+| Phase 8 | `shared/hashing/signing.go` | ✅ |
+| Phase 9 | `l1-core/anchor/api.go` | ✅ |
+| Phase 10 | `shared/tracing/tracer.go` | ✅ |
+| Phase 11 | `REVIEW_PACKET.md` | ✅ |
+| Phase 12 | `docs/handover.md` | ✅ |
