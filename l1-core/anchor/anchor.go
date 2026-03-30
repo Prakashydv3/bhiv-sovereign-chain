@@ -1,5 +1,3 @@
-// Package anchor implements the L1 anchor registry.
-// Anchors are reference-only — no state mutation after submission.
 package anchor
 
 import (
@@ -11,20 +9,45 @@ import (
 
 // Record is a single immutable anchor entry on L1.
 type Record struct {
-	AnchorID   [32]byte
-	StateHash  [32]byte
-	ParentHash [32]byte
-	Timestamp  int64
+	AnchorID          [32]byte
+	StateHash         [32]byte
+	ParentHash        [32]byte
+	Timestamp         int64
+	AgentSignerID     string
+	EnforcementSignerID string
 }
 
 // registry is the in-memory store (replaced by on-chain contract in production).
 var registry = map[[32]byte]Record{}
 
-// Submit stores a new anchor. Returns anchorID = SHA-256(stateHash || parentHash).
-// stateHash must be non-zero. Duplicate anchors are rejected.
-func Submit(stateHash [32]byte, parentHash [32]byte, timestamp int64) ([32]byte, error) {
+// Submit stores a new anchor only after both agent and enforcement signatures are verified.
+// Flow: envelope → hash → signatures → L1 anchor
+// stateHash must be non-zero. Both signatures must be valid. Duplicates are rejected.
+func Submit(
+	stateHash [32]byte,
+	parentHash [32]byte,
+	timestamp int64,
+	agentSig *hashing.SignedHash,
+	enforcementSig *hashing.SignedHash,
+) ([32]byte, error) {
 	if stateHash == ([32]byte{}) {
 		return [32]byte{}, errors.New("stateHash must not be zero")
+	}
+
+	// Verify agent signature — anchor is rejected if invalid
+	if err := agentSig.Verify(); err != nil {
+		return [32]byte{}, fmt.Errorf("agent signature invalid: %w", err)
+	}
+	if agentSig.Hash != stateHash {
+		return [32]byte{}, fmt.Errorf("agent signature does not cover the submitted stateHash")
+	}
+
+	// Verify enforcement signature — anchor is rejected if invalid
+	if err := enforcementSig.Verify(); err != nil {
+		return [32]byte{}, fmt.Errorf("enforcement signature invalid: %w", err)
+	}
+	if enforcementSig.Hash != stateHash {
+		return [32]byte{}, fmt.Errorf("enforcement signature does not cover the submitted stateHash")
 	}
 
 	anchorID := hashing.CombineHashes(stateHash, parentHash)
@@ -34,10 +57,12 @@ func Submit(stateHash [32]byte, parentHash [32]byte, timestamp int64) ([32]byte,
 	}
 
 	registry[anchorID] = Record{
-		AnchorID:   anchorID,
-		StateHash:  stateHash,
-		ParentHash: parentHash,
-		Timestamp:  timestamp,
+		AnchorID:            anchorID,
+		StateHash:           stateHash,
+		ParentHash:          parentHash,
+		Timestamp:           timestamp,
+		AgentSignerID:       agentSig.SignerID,
+		EnforcementSignerID: enforcementSig.SignerID,
 	}
 	return anchorID, nil
 }

@@ -54,11 +54,11 @@ func main() {
 	fmt.Println("\n[3] Agent + enforcement signing")
 	enforcementSigner, _ := hashing.NewSigner("enforcement-001")
 
-	agentSigned, err := agentSigner.CreateSignedHash(envelopeHash[:])
+	agentSigned, err := agentSigner.SignHashRaw(envelopeHash)
 	if err != nil {
 		log.Fatal(err)
 	}
-	enforcementSigned, err := enforcementSigner.CreateSignedHash(envelopeHash[:])
+	enforcementSigned, err := enforcementSigner.SignHashRaw(envelopeHash)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,10 +76,10 @@ func main() {
 	fmt.Printf("  enforcement_signer  : %s\n", enforcementSigned.SignerID)
 	fmt.Printf("  enforcement_verified: true\n")
 
-	// --- Step 4: L1 Anchor ---
+	// --- Step 4: L1 Anchor (only reachable after both signatures verified) ---
 	fmt.Println("\n[4] L1 anchoring")
 	var parentHash [32]byte
-	anchorID, err := anchor.Submit(envelopeHash, parentHash, time.Now().Unix())
+	anchorID, err := anchor.Submit(envelopeHash, parentHash, time.Now().Unix(), agentSigned, enforcementSigned)
 	if err != nil {
 		log.Fatal(err)
 	}

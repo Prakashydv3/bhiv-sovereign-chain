@@ -58,7 +58,19 @@ type SignedHash struct {
 	PublicKey string   `json:"public_key"`
 }
 
-// CreateSignedHash creates a signed hash structure
+// SignHashRaw signs an already-computed hash directly without re-hashing.
+// Use this when the caller has already computed SHA-256 (e.g. envelope.Hash()).
+func (s *Signer) SignHashRaw(hash [32]byte) (*SignedHash, error) {
+	signature := ed25519.Sign(s.privateKey, hash[:])
+	return &SignedHash{
+		Hash:      hash,
+		Signature: signature,
+		SignerID:  s.signerID,
+		PublicKey: s.PublicKeyHex(),
+	}, nil
+}
+
+// CreateSignedHash computes SHA-256 of data then signs it.
 func (s *Signer) CreateSignedHash(data []byte) (*SignedHash, error) {
 	hash := sha256.Sum256(data)
 	signature, err := s.SignHash(hash)
