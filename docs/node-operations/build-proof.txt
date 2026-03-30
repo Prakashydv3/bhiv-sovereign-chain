@@ -1,0 +1,9 @@
+Geth
+Version: 1.17.1-unstable
+Git Commit: cee751a1edc34a3f04be13e794e504f59ac11fc0
+Git Commit Date: 20260227
+Architecture: amd64
+Go Version: go1.25.6
+Operating System: windows
+GOPATH=C:\Users\ay204\go
+GOROOT=

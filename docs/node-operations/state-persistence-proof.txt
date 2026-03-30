@@ -1,0 +1,3 @@
+State Persistence Test 
+Node restarted successfully 
+Block data persisted correctly 

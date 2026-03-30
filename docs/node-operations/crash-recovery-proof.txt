@@ -1,0 +1,5 @@
+Before Crash: 
+{"jsonrpc":"2.0","id":1,"result":"0x0"}
+ 
+After Recovery: 
+{"jsonrpc":"2.0","id":1,"result":"0x0"}

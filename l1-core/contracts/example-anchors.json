@@ -1,0 +1,89 @@
+{
+  "examples": [
+    {
+      "description": "Root Registry Snapshot Anchor",
+      "anchor": {
+        "anchorId": "0x7d3e4f2a1b8c9d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e",
+        "artifactType": "registry_snapshot",
+        "artifactHash": "0xa1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+        "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "timestampUtc": 1704067200,
+        "schemaVersion": 1
+      },
+      "notes": "First anchor with no parent (root)"
+    },
+    {
+      "description": "Second Registry Snapshot Anchor",
+      "anchor": {
+        "anchorId": "0x8e4f5a3b2c9d0e1f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f",
+        "artifactType": "registry_snapshot",
+        "artifactHash": "0xb2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+        "parentHash": "0x7d3e4f2a1b8c9d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e",
+        "timestampUtc": 1704153600,
+        "schemaVersion": 1
+      },
+      "notes": "Links to previous registry snapshot via parentHash"
+    },
+    {
+      "description": "Replay Proof Anchor",
+      "anchor": {
+        "anchorId": "0x9f5a6b4c3d0e1f2a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a",
+        "artifactType": "replay_proof",
+        "artifactHash": "0xc3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
+        "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "timestampUtc": 1704240000,
+        "schemaVersion": 1
+      },
+      "notes": "Independent replay proof with no parent"
+    },
+    {
+      "description": "Projection Root Anchor",
+      "anchor": {
+        "anchorId": "0xa0b6c7d5e4f1a2b3c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b",
+        "artifactType": "projection_root",
+        "artifactHash": "0xd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5",
+        "parentHash": "0x8e4f5a3b2c9d0e1f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f",
+        "timestampUtc": 1704326400,
+        "schemaVersion": 1
+      },
+      "notes": "Projection root linking to registry snapshot"
+    },
+    {
+      "description": "Third Registry Snapshot Anchor (Chain Continuation)",
+      "anchor": {
+        "anchorId": "0xb1c7d8e6f5a2b3c4d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c",
+        "artifactType": "registry_snapshot",
+        "artifactHash": "0xe5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+        "parentHash": "0x8e4f5a3b2c9d0e1f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f",
+        "timestampUtc": 1704412800,
+        "schemaVersion": 1
+      },
+      "notes": "Continues the registry snapshot chain"
+    }
+  ],
+  "chain_visualization": {
+    "registry_chain": [
+      "Root Snapshot (0x7d3e...) → Second Snapshot (0x8e4f...) → Third Snapshot (0xb1c7...)"
+    ],
+    "independent_anchors": [
+      "Replay Proof (0x9f5a...) [no parent]",
+      "Projection Root (0xa0b6...) [links to 0x8e4f...]"
+    ]
+  },
+  "verification_example": {
+    "description": "How to verify anchor integrity",
+    "steps": [
+      "1. Retrieve anchor by anchorId",
+      "2. Verify artifactHash matches off-chain artifact hash",
+      "3. If parentHash is non-zero, verify parent anchor exists",
+      "4. Confirm timestamp is reasonable",
+      "5. Check schemaVersion matches expected version"
+    ],
+    "example": {
+      "anchorId": "0x8e4f5a3b2c9d0e1f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f",
+      "off_chain_artifact_hash": "0xb2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+      "verification_result": "MATCH - Anchor is valid",
+      "parent_verification": "Parent 0x7d3e... exists and is valid"
+    }
+  }
+}

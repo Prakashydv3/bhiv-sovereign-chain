@@ -1,0 +1,5 @@
+Before Restart: 
+{"jsonrpc":"2.0","id":1,"result":null}
+ 
+After Restart: 
+{"jsonrpc":"2.0","id":1,"result":null}
